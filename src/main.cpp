@@ -10,8 +10,6 @@
 #include "json.hpp"
 #include "spline.h"
 
-#include "helper.hpp"
-
 using namespace std;
 
 // for convenience
