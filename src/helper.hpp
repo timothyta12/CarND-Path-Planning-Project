@@ -15,6 +15,8 @@ using Eigen::VectorXd;
 class Helper {
 public:
 	vector<double> JMT(vector< double> start, vector <double> end, double T);
+    
+    double evaluateJMT(vector<double> coefficents, double T);
 };
 
 #endif

@@ -59,3 +59,11 @@ vector<double> Helper::JMT(vector< double> start, vector <double> end, double T)
     return result;
     
 }
+
+double Helper::evaluateJMT(vector<double> coefficents, double T) {
+  double result = 0;
+  for (int i=0; i<coefficents.size(); i++) {
+    result += coefficents[i]*pow(T, i);
+  }
+  return result;
+}
