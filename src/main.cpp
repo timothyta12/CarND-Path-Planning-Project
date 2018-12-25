@@ -202,6 +202,7 @@ int main() {
 
   // Status variables
   int lane = 1;
+  double MAX_SPEED = 49.5;
   
   h.onMessage([&lane, &map_waypoints_x,&map_waypoints_y,&map_waypoints_s,&map_waypoints_dx,&map_waypoints_dy](uWS::WebSocket<uWS::SERVER> ws, char *data, size_t length,
                      uWS::OpCode opCode) {
@@ -238,7 +239,7 @@ int main() {
           	double end_path_d = j[1]["end_path_d"];
 
           	// Sensor Fusion Data, a list of all other cars on the same side of the road.
-          	auto sensor_fusion = j[1]["sensor_fusion"];
+          	vector<vector<double>> sensor_fusion = j[1]["sensor_fusion"];
 
           	json msgJson;
 
