@@ -281,21 +281,42 @@ int main() {
                 }
               }
               // Check left lane
-              if (lane > 0 && other_lane == lane - 1) {
-                
+              if (lane == 0) {
+                car_left = true;
+              }
+              else if (other_lane == lane - 1) {
+                if (other_s > car_s - 30 && car_s + 30 > other_s ) {
+                  car_left = true;
+                }
               }
               // Check right lane
-              if (lane < 2 && other_lane == lane + 1) {
-                
+              if (lane == 2) {
+                car_right = true;
               }
-              
-              
+              else if (other_lane == lane + 1) {
+                if (other_s > car_s - 30 && car_s + 30 > other_s ) {
+                  car_right = true;
+                }
+              }
             }
           	
           	if (car_ahead) {
-              ref_vel -= MAX_ACC;
+              // Try to move into right lane
+              if (!car_right) {
+                lane++;
+              }
+              // Try to move into left lane
+              else if (!car_left) {
+                lane--;
+              }
+              else {
+              	ref_vel -= MAX_ACC;
+              }
             }
           	else {
+              // Prefer middle lane
+              
+              // Accelerate
               if (ref_vel+MAX_ACC < MAX_SPEED) {
                 ref_vel += MAX_ACC;
               }
