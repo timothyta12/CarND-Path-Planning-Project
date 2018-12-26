@@ -204,8 +204,10 @@ int main() {
   // Status variables
   int lane = 1;
   double MAX_SPEED = 49.5;
+  double MAX_ACC = 0.224;
+  double ref_vel = 0.0;
   
-  h.onMessage([&lane, &MAX_SPEED, &map_waypoints_x,&map_waypoints_y,&map_waypoints_s,&map_waypoints_dx,&map_waypoints_dy](uWS::WebSocket<uWS::SERVER> ws, char *data, size_t length,
+  h.onMessage([&lane, &MAX_SPEED, &MAX_ACC, &ref_vel, &map_waypoints_x,&map_waypoints_y,&map_waypoints_s,&map_waypoints_dx,&map_waypoints_dy](uWS::WebSocket<uWS::SERVER> ws, char *data, size_t length,
                      uWS::OpCode opCode) {
     // "42" at the start of the message means there's a websocket message event.
     // The 4 signifies a websocket message
@@ -249,6 +251,56 @@ int main() {
 
 
           	// TODO: define a path made up of (x,y) points that the car will visit sequentially every .02 seconds
+          	bool car_ahead = false;
+          	bool car_left = false;
+          	bool car_right = false;
+          
+          	for (vector<double> other: sensor_fusion) {
+              double other_speed = other[3];
+              double other_s = other[5];
+              double other_d = other[6];
+              
+              int other_lane;
+              if (0 <= other_d && other_d <= 4) {
+                other_lane = 0;
+              }
+              else if (4 < other_d && other_d < 8) {
+                other_lane = 1;
+              }
+              else if (8 <= other_d && other_d < 12) {
+                other_lane = 2;
+              }
+              else {
+                other_lane = -1;
+              }
+              
+              // Check our lane
+              if (other_lane == lane) {
+                if (other_s > car_s && car_s + 30 > other_s) {
+                  car_ahead = true;
+                }
+              }
+              // Check left lane
+              if (lane > 0 && other_lane == lane - 1) {
+                
+              }
+              // Check right lane
+              if (lane < 2 && other_lane == lane + 1) {
+                
+              }
+              
+              
+            }
+          	
+          	if (car_ahead) {
+              ref_vel -= MAX_ACC;
+            }
+          	else {
+              if (ref_vel+MAX_ACC < MAX_SPEED) {
+                ref_vel += MAX_ACC;
+              }
+            }
+          
           	int prev_size = previous_path_x.size();
           
           	vector<double> ptsx;
@@ -288,35 +340,6 @@ int main() {
               
             ptsx.push_back(ref_x);
             ptsy.push_back(ref_y);
-//           	double ref_x = car_x;
-//           	double ref_y = car_y;
-//           	double ref_yaw = deg2rad(car_yaw);
-          	
-//           	if (prev_size < 2) {
-//               double prev_car_x = car_x - cos(ref_yaw);
-//               double prev_car_y = car_y - sin(ref_yaw);
-              
-//               ptsx.push_back(prev_car_x);
-//               ptsx.push_back(car_x);
-              
-//               ptsy.push_back(prev_car_y);
-//               ptsy.push_back(car_y);
-//             }
-//           	else {
-//               ref_x = previous_path_x[prev_size-1];
-//               ref_y = previous_path_y[prev_size-1];
-              
-//               double ref_x_prev = previous_path_x[prev_size-2];
-//               double ref_y_prev = previous_path_y[prev_size-2];
-              
-//               ref_yaw = atan2(ref_y-ref_y_prev, ref_x-ref_x_prev);
-              
-//               ptsx.push_back(ref_x_prev);
-//               ptsx.push_back(ref_x);
-              
-//               ptsy.push_back(ref_y_prev);
-//               ptsy.push_back(ref_y);
-//             }
           
           	vector<double> next_wp0 = getXY(car_s+30, 2+4*lane, map_waypoints_s, map_waypoints_x, map_waypoints_y);
           	vector<double> next_wp1 = getXY(car_s+60, 2+4*lane, map_waypoints_s, map_waypoints_x, map_waypoints_y);
@@ -357,7 +380,7 @@ int main() {
           	double x_add_on = 0;
           
           	for (int i=1; i<=50-prev_size; i++) {
-              double N = target_distance / (0.02*MAX_SPEED/2.24);
+              double N = target_distance / (0.02*ref_vel/2.24);
               double x_point = x_add_on + target_x/N;
               double y_point = s(x_point);
               
