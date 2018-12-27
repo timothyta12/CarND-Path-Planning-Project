@@ -251,6 +251,12 @@ int main() {
 
 
           	// TODO: define a path made up of (x,y) points that the car will visit sequentially every .02 seconds
+          	int prev_size = previous_path_x.size();
+          
+          	if (prev_size > 0) {
+              car_s = end_path_s;
+            }
+          
           	bool car_ahead = false;
           	bool car_left = false;
           	bool car_right = false;
@@ -300,6 +306,7 @@ int main() {
               }
             }
           	
+          	double car_acc = 0.0;
           	if (car_ahead) {
               // Try to move into right lane
               if (!car_right) {
@@ -310,19 +317,24 @@ int main() {
                 lane--;
               }
               else {
-              	ref_vel -= MAX_ACC;
+              	car_acc -= MAX_ACC;
               }
             }
           	else {
               // Prefer middle lane
-              
+              if (lane != 1) {
+                if (lane == 0 && !car_right) {
+                  lane = 1;
+                }
+                else if (lane == 2 && !car_left) {
+                  lane = 1;
+                }
+              }
               // Accelerate
               if (ref_vel+MAX_ACC < MAX_SPEED) {
-                ref_vel += MAX_ACC;
+                car_acc += MAX_ACC;
               }
             }
-          
-          	int prev_size = previous_path_x.size();
           
           	vector<double> ptsx;
           	vector<double> ptsy;
@@ -401,6 +413,11 @@ int main() {
           	double x_add_on = 0;
           
           	for (int i=1; i<=50-prev_size; i++) {
+              ref_vel += car_acc;
+              if (ref_vel > MAX_SPEED) {
+                ref_vel = MAX_SPEED;
+              }
+              
               double N = target_distance / (0.02*ref_vel/2.24);
               double x_point = x_add_on + target_x/N;
               double y_point = s(x_point);
