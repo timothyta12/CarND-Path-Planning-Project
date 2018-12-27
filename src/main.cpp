@@ -262,8 +262,8 @@ int main() {
           	bool car_right = false;
           
           	for (vector<double> other: sensor_fusion) {
-              double other_speed = other[3];
-              double other_s = other[5];
+              double other_speed = distance(other[3], other[4], 0, 0);
+              double other_s = other[5] + other_speed*0.02*(double)prev_size;
               double other_d = other[6];
               
               int other_lane;
@@ -282,7 +282,7 @@ int main() {
               
               // Check our lane
               if (other_lane == lane) {
-                if (other_s > car_s && car_s + 30 > other_s) {
+                if (other_s > car_s && car_s + 20 > other_s) {
                   car_ahead = true;
                 }
               }
@@ -291,7 +291,7 @@ int main() {
                 car_left = true;
               }
               else if (other_lane == lane - 1) {
-                if (other_s > car_s - 30 && car_s + 30 > other_s ) {
+                if (other_s > car_s - 20 && car_s + 20 > other_s ) {
                   car_left = true;
                 }
               }
@@ -300,7 +300,7 @@ int main() {
                 car_right = true;
               }
               else if (other_lane == lane + 1) {
-                if (other_s > car_s - 30 && car_s + 30 > other_s ) {
+                if (other_s > car_s - 20 && car_s + 20 > other_s ) {
                   car_right = true;
                 }
               }
