@@ -87,54 +87,47 @@ A really helpful resource for doing this project and creating smooth trajectorie
     git checkout e94b6e1
     ```
 
-## Editor Settings
+## Project Rubic 
+This rubic was used as a guideline for the project
+[Rubic](https://review.udacity.com/#!/rubrics/1971/view).
 
-We've purposefully kept editor configuration files out of this repo in order to
-keep it as simple and environment agnostic as possible. However, we recommend
-using the following settings:
+## The Project
+Many parts of the self-driving system have been implemented already. The focus of this project is to create the car's trajectory.
 
-* indent using spaces
-* set tab width to 2 spaces (keeps the matrices in source code aligned)
+### Gathering Information
+In order to create a trajectory, the car needs to know certains things about the road.
 
-## Code Style
+#### Assumptions
+For the purposes of simplicity, the car's sensors has gathered perfect information about its whereabouts, along with other car's locations, and has perfect road knowledge.
 
-Please (do your best to) stick to [Google's C++ style guide](https://google.github.io/styleguide/cppguide.html).
+#### Vehicle Awareness (Lines 264-307) and Changing Lanes (Lines 309-337)
+In order to avoid collisions and change lanes, the car must be able to sense the cars around itself.
+The car simply checks whether a car in front of it is in a certain range. If a car is within this range, a flag is set for the car to slow down and search for a lane change.
 
-## Project Instructions and Rubric
+A lane change is permissible if there is space both in front and behind the car in the next lane over.
 
-Note: regardless of the changes you make, your project must be buildable using
-cmake and make!
+This information is conveyed to the trajectory calcuation by specifying a goal velocity and desired lane position.
 
+### Calculating Trajectory (Lines 342-438)
+With the desired velocity and lane obtained above, a tracjectory can be calculated for the car. Using the [Spline](http://kluge.in-chemnitz.de/opensource/spline/) library, an equation for the trajectory is created by interpolating points.
 
-## Call for IDE Profiles Pull Requests
+First, to create a smooth corherent path, the unused previous path's information is perserved. If there is no previous path, the car's current location is used as a starting reference.
 
-Help your fellow students!
+In addition to these starting points, the car plots several points 30m, 60m, and 90m ahead of itself in the desired lane. (Lines 377-388)
 
-We decided to create Makefiles with cmake to keep this project as platform
-agnostic as possible. Similarly, we omitted IDE profiles in order to ensure
-that students don't feel pressured to use one IDE or another.
+These points are then normalized such that the starting points are at _x = 0_, _y = 0_ and _yaw = 0_. This simplifies the calculations of the trajectory.
 
-However! I'd love to help people get up and running with their IDEs of choice.
-If you've created a profile for an IDE that you think other students would
-appreciate, we'd love to have you add the requisite profile files and
-instructions to ide_profiles/. For example if you wanted to add a VS Code
-profile, you'd add:
+A spline is fitted to these sets of points. The spline guarentees that we will visit each of these points.
 
-* /ide_profiles/vscode/.vscode
-* /ide_profiles/vscode/README.md
+Finally, using the spline, we calculate various points by considering the velocity and time elapsed for each car controller update. Keep in mind that the points must be denormalized back to the world's coordinate system. (Lines 415-438)
 
-The README should explain what the profile does, how to take advantage of it,
-and how to install it.
+### Considerations and Problems
+With this model, the car is able to navigate the highway well. The paths created are smooth and not jerky. The car will avoid crashing into a car in front of it and is able to execute lane changes to attempt to go faster. This car passed all parts of the project except for rare occasions.
 
-Frankly, I've never been involved in a project with multiple IDE profiles
-before. I believe the best way to handle this would be to keep them out of the
-repo root to avoid clutter. My expectation is that most profiles will include
-instructions to copy files to a new location to get picked up by the IDE, but
-that's just a guess.
+One issue with this model is that cars are not predicted very well. The model only considers other car's current location and current velocity. It does not consider acceleration and thus does not accurately predict the car's future location. The longer the latency, the bigger the discrepency.
 
-One last note here: regardless of the IDE used, every submitted project must
-still be compilable with cmake and make./
+This issue has two major implications. First, the model is aggressive in staying away from the car in front of it. It assumes that the other car will slow down and thus, applies the brakes aggressively. The car will not smoothly follow the car at constant speed as it accelerates and decelerates to keep the car in front of it at a target distance. Although it is not a fatal problem, passengers of the car will be very upset.
+The next problem caused by this is when two cars try to merge into the same lane. The model does not predict whether the car in front of it will change lanes. This error will cause a collision, which rarely, but could happen. People will often make this mistake causing crashes too. Both driver's check the lane they want to go into, failing to look at the car two lanes over.
+This problem can be fixed by having a more intelligent prediction system and a better sense of other car's actions.
 
-## How to write a README
-A well written README file can enhance your project and portfolio.  Develop your abilities to create professional README files by completing [this free course](https://www.udacity.com/course/writing-readmes--ud777).
-
+Another efficieny problem is that the lane change decision making is very simple. A lane change will occur if the car in front of it is below the speed limit and it is safe to do so. This can be fixed through a cost function that weighs between staying in a lane or switching lanes.
